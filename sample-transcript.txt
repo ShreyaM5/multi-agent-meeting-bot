@@ -1,6 +1,0 @@
-Alice: Okay, let's kick off. We need to decide who owns the budget update.
-Bob: I can send the updated deck by Friday.
-Alice: Great, and can you also follow up with legal on the contract language?
-Bob: Yes, I will ask legal and circle back by Monday.
-Charlie: Um, I think we should also document the risks in the summary.
-Alice: Please share the first draft with the team by next week.
