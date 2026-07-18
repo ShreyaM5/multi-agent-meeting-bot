@@ -102,33 +102,55 @@ export default function HomePage() {
   }, []);
 
   return (
-    <main className="min-h-screen px-6 py-10">
+    <main className="min-h-screen bg-slate-50 px-6 py-10">
       <div className="mx-auto max-w-6xl">
-        <div className="mb-10 rounded-3xl bg-white p-10 shadow-lg">
-          <h1 className="text-4xl font-semibold text-slate-900">Meeting-to-Action</h1>
-          <p className="mt-3 text-slate-600">Paste a meeting transcript and automatically extract commitments, tasks, and follow-up emails.</p>
+        <div className="mb-10 overflow-hidden rounded-[2rem] bg-gradient-to-r from-teal-600 via-sky-600 to-cyan-500 p-1 shadow-2xl">
+          <div className="rounded-[1.75rem] bg-white px-8 py-10 sm:px-14">
+            <span className="inline-flex rounded-full bg-teal-100 px-3 py-1 text-sm font-semibold text-teal-800">FlowZint AI Hackathon 2026</span>
+            <h1 className="mt-6 text-5xl font-semibold tracking-tight text-slate-900">Meeting-to-Action</h1>
+            <p className="mt-4 max-w-3xl text-lg leading-8 text-slate-600">Paste a meeting transcript and automatically extract commitments, tasks, and follow-up emails.</p>
+            <div className="mt-6 flex flex-wrap items-center gap-3 text-sm text-slate-600">
+              <a href="https://multi-agent-meeting-bot.netlify.app" className="font-semibold text-teal-700 hover:text-teal-900">Live app</a>
+              <span>•</span>
+              <a href="https://multi-agent-meeting-bot.onrender.com/docs" className="font-semibold text-teal-700 hover:text-teal-900">Backend API docs</a>
+            </div>
+          </div>
         </div>
 
-        <div className="grid gap-8 lg:grid-cols-[1.4fr_0.6fr]">
-          <section className="rounded-3xl bg-white p-8 shadow-lg">
+        <div className="grid gap-8 lg:grid-cols-[1.45fr_0.7fr]">
+          <section className="rounded-[2rem] border border-slate-200 bg-white p-8 shadow-xl">
             <h2 className="text-2xl font-semibold text-slate-900">Transcript input</h2>
+            <p className="mt-2 text-sm text-slate-600">Paste the meeting transcript below, then process it to generate action items and follow-up emails.</p>
             <textarea
               value={transcript}
-              onChange={(event) => setTranscript(event.target.value)}
+              onChange={(event) => {
+                setTranscript(event.target.value);
+                setTasks([]);
+                setEmails([]);
+                setError('');
+              }}
               placeholder="Paste the meeting transcript here..."
-              className="mt-4 h-72 w-full rounded-3xl border border-slate-200 bg-slate-50 p-4 text-slate-900 outline-none focus:border-slate-400"
+              className="mt-4 h-72 w-full rounded-[1.5rem] border border-slate-200 bg-slate-50 p-5 text-slate-900 outline-none transition focus:border-teal-400 focus:ring-2 focus:ring-teal-100"
             />
             <button
               onClick={handleSubmit}
               disabled={loading}
-              className="mt-4 inline-flex items-center justify-center rounded-full bg-slate-900 px-6 py-3 text-sm font-semibold text-white transition hover:bg-slate-700 disabled:cursor-not-allowed disabled:bg-slate-400"
+              className="mt-5 inline-flex items-center justify-center rounded-full bg-teal-600 px-7 py-3 text-sm font-semibold text-white transition hover:bg-teal-700 disabled:cursor-not-allowed disabled:bg-teal-300"
             >
-              {loading ? 'Processing…' : 'Process Transcript'}
+              {loading ? (
+                <>
+                  <span className="mr-2 inline-block h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                  Processing…
+                </>
+              ) : (
+                'Process Transcript'
+              )}
             </button>
-            {error ? <p className="mt-4 text-sm text-red-600">{error}</p> : null}
+            {error ? <p className="mt-4 text-sm text-rose-600">{error}</p> : null}
+            {loading ? <p className="mt-4 rounded-3xl bg-teal-50 p-4 text-sm text-teal-800">Processing transcript, please wait...</p> : null}
           </section>
 
-          <section className="rounded-3xl bg-white p-8 shadow-lg">
+          <section className="rounded-[2rem] border border-slate-200 bg-white p-8 shadow-xl">
             <div className="flex items-start justify-between gap-4">
               <div>
                 <h2 className="text-2xl font-semibold text-slate-900">History</h2>
@@ -138,17 +160,17 @@ export default function HomePage() {
                 type="button"
                 onClick={fetchHistory}
                 disabled={historyLoading || !apiUrl}
-                className="rounded-full bg-slate-900 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-700 disabled:cursor-not-allowed disabled:bg-slate-400"
+                className="rounded-full bg-teal-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-teal-700 disabled:cursor-not-allowed disabled:bg-teal-300"
               >
                 {historyLoading ? 'Refreshing…' : 'Refresh'}
               </button>
             </div>
             <div className="mt-6 space-y-4">
               {apiUrl ? null : (
-                <p className="rounded-2xl bg-amber-50 p-4 text-amber-800">Set NEXT_PUBLIC_API_URL in frontend/.env.local to use history.</p>
+                <p className="rounded-3xl bg-amber-50 p-4 text-amber-800">Set NEXT_PUBLIC_API_URL in frontend/.env.local to use history.</p>
               )}
               {history.length === 0 ? (
-                <p className="rounded-2xl bg-slate-50 p-4 text-slate-700">No history available yet. Process a transcript to create history.</p>
+                <p className="rounded-3xl bg-slate-50 p-4 text-slate-700">No history available yet. Process a transcript to create history.</p>
               ) : (
                 <div className="space-y-3">
                   {history.map((item) => (
@@ -164,58 +186,73 @@ export default function HomePage() {
           </section>
         </div>
 
-        {tasks.length > 0 ? (
-          <section className="mt-10 rounded-3xl bg-white p-8 shadow-lg">
-            <h2 className="text-2xl font-semibold text-slate-900">Tasks</h2>
-            <div className="mt-6 overflow-x-auto">
-              <table className="w-full border-collapse text-left text-sm">
-                <thead>
-                  <tr className="text-slate-500">
-                    <th className="pb-3 pr-6">Owner</th>
-                    <th className="pb-3 pr-6">Task</th>
-                    <th className="pb-3 pr-6">Due Date</th>
-                    <th className="pb-3 pr-6">Priority</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {tasks.map((task, index) => (
-                    <tr key={index} className={index % 2 === 0 ? 'bg-slate-50' : ''}>
-                      <td className="py-4 pr-6 font-medium text-slate-900">{task.owner}</td>
-                      <td className="py-4 pr-6 text-slate-700">{task.title}</td>
-                      <td className="py-4 pr-6 text-slate-600">{task.due_date || 'No deadline'}</td>
-                      <td className="py-4 pr-6">
-                        <span className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold ${priorityStyles[task.priority]}`}>
-                          {task.priority}
-                        </span>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+        {(tasks.length > 0 || emails.length > 0) && (
+          <div className="mt-10 rounded-[2rem] border border-slate-200 bg-white p-8 shadow-xl">
+            <div className="flex flex-col gap-3 border-b border-slate-200 pb-6 sm:flex-row sm:items-end sm:justify-between">
+              <div>
+                <h2 className="text-2xl font-semibold text-slate-900">Results</h2>
+                <p className="mt-2 text-slate-600">Review the extracted tasks and email drafts generated from your transcript.</p>
+              </div>
+              <div className="flex flex-wrap gap-3 text-sm text-slate-600">
+                <span className="rounded-full bg-teal-50 px-3 py-1 text-teal-700">{tasks.length} task{tasks.length === 1 ? '' : 's'}</span>
+                <span className="rounded-full bg-slate-100 px-3 py-1 text-slate-700">{emails.length} email draft{emails.length === 1 ? '' : 's'}</span>
+              </div>
             </div>
-          </section>
-        ) : null}
 
-        {emails.length > 0 ? (
-          <section className="mt-10 rounded-3xl bg-white p-8 shadow-lg">
-            <h2 className="text-2xl font-semibold text-slate-900">Draft Emails</h2>
-            <div className="mt-6 grid gap-6">
-              {emails.map((email, index) => (
-                <div key={index} className="rounded-3xl border border-slate-200 bg-slate-50 p-6">
-                  <h3 className="text-lg font-semibold text-slate-900">{email.to}</h3>
-                  <p className="mt-2 text-sm text-slate-600"><strong>Subject:</strong> {email.subject}</p>
-                  <pre className="mt-4 whitespace-pre-wrap rounded-3xl bg-white p-4 text-sm leading-6 text-slate-800">{email.body}</pre>
-                  <a
-                    href={encodeMailto(email.subject, email.body)}
-                    className="mt-4 inline-flex rounded-full bg-slate-900 px-5 py-3 text-sm font-semibold text-white hover:bg-slate-700"
-                  >
-                    Open in Email
-                  </a>
+            {tasks.length > 0 && (
+              <section className="mt-8">
+                <h3 className="text-xl font-semibold text-slate-900">Tasks</h3>
+                <div className="mt-6 overflow-x-auto rounded-[1.5rem] border border-slate-200">
+                  <table className="w-full border-collapse text-left text-sm">
+                    <thead className="bg-slate-50 text-slate-500">
+                      <tr>
+                        <th className="px-6 py-4">Owner</th>
+                        <th className="px-6 py-4">Task</th>
+                        <th className="px-6 py-4">Due Date</th>
+                        <th className="px-6 py-4">Priority</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {tasks.map((task) => (
+                        <tr key={`${task.owner}-${task.title}-${task.due_date || 'none'}`} className="even:bg-slate-50">
+                          <td className="whitespace-nowrap px-6 py-4 font-medium text-slate-900">{task.owner}</td>
+                          <td className="px-6 py-4 text-slate-700">{task.title}</td>
+                          <td className="px-6 py-4 text-slate-600">{task.due_date || 'No deadline'}</td>
+                          <td className="px-6 py-4">
+                            <span className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold ${priorityStyles[task.priority]}`}>
+                              {task.priority}
+                            </span>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
                 </div>
-              ))}
-            </div>
-          </section>
-        ) : null}
+              </section>
+            )}
+
+            {emails.length > 0 && (
+              <section className="mt-10">
+                <h3 className="text-xl font-semibold text-slate-900">Draft Emails</h3>
+                <div className="mt-6 grid gap-6 lg:grid-cols-2">
+                  {emails.map((email) => (
+                    <div key={`${email.to}-${email.subject}`} className="space-y-4 rounded-[1.5rem] border border-slate-200 bg-slate-50 p-6 shadow-sm">
+                      <p className="text-sm font-semibold uppercase tracking-[0.15em] text-teal-700">{email.to}</p>
+                      <p className="text-lg font-semibold text-slate-900">{email.subject}</p>
+                      <div className="rounded-3xl bg-white p-4 text-sm leading-7 text-slate-700 shadow-sm">{email.body}</div>
+                      <a
+                        href={encodeMailto(email.subject, email.body)}
+                        className="inline-flex rounded-full bg-teal-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-teal-700"
+                      >
+                        Open in Email
+                      </a>
+                    </div>
+                  ))}
+                </div>
+              </section>
+            )}
+          </div>
+        )}
       </div>
     </main>
   );
