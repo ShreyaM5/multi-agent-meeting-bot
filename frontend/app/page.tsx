@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 type Task = {
   owner: string;
@@ -40,6 +40,7 @@ export default function HomePage() {
   const [loading, setLoading] = useState(false);
   const [historyLoading, setHistoryLoading] = useState(false);
   const [error, setError] = useState('');
+  const requestIdRef = useRef(0);
 
   const apiUrl = process.env.NEXT_PUBLIC_API_URL || '';
 
@@ -70,6 +71,10 @@ export default function HomePage() {
       setError('Please paste a transcript before processing.');
       return;
     }
+
+    requestIdRef.current += 1;
+    const currentRequestId = requestIdRef.current;
+
     setLoading(true);
     try {
       const response = await fetch(`${apiUrl}/process-transcript`, {
@@ -82,13 +87,20 @@ export default function HomePage() {
         throw new Error(errorData.detail || 'Backend error');
       }
       const data = await response.json();
+      if (currentRequestId !== requestIdRef.current) {
+        return;
+      }
       setTasks(data.tasks || []);
       setEmails(data.emails || []);
       await fetchHistory();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Unknown error');
+      if (currentRequestId === requestIdRef.current) {
+        setError(err instanceof Error ? err.message : 'Unknown error');
+      }
     } finally {
-      setLoading(false);
+      if (currentRequestId === requestIdRef.current) {
+        setLoading(false);
+      }
     }
   }
 
@@ -227,7 +239,7 @@ export default function HomePage() {
                     </thead>
                     <tbody>
                       {tasks.map((task) => (
-                        <tr key={`${task.owner}-${task.title}-${task.due_date || 'none'}`} className="even:bg-slate-50">
+                        <tr key={`${task.owner}-${task.title}-${task.due_date || 'none'}-${task.priority}`} className="even:bg-slate-50">
                           <td className="whitespace-nowrap px-6 py-4 font-medium text-slate-900">{task.owner}</td>
                           <td className="px-6 py-4 text-slate-700">{task.title}</td>
                           <td className="px-6 py-4 text-slate-600">{task.due_date || 'No deadline'}</td>
@@ -249,7 +261,7 @@ export default function HomePage() {
                 <h3 className="text-xl font-semibold text-slate-900">Draft Emails</h3>
                 <div className="mt-6 grid gap-6 lg:grid-cols-2">
                   {emails.map((email) => (
-                    <div key={`${email.to}-${email.subject}`} className="space-y-4 rounded-[1.5rem] border border-slate-200 bg-slate-50 p-6 shadow-sm">
+                    <div key={`${email.to}-${email.subject}-${email.body.slice(0, 80)}`} className="space-y-4 rounded-[1.5rem] border border-slate-200 bg-slate-50 p-6 shadow-sm">
                       <p className="text-sm font-semibold uppercase tracking-[0.15em] text-teal-700">{email.to}</p>
                       <p className="text-lg font-semibold text-slate-900">{email.subject}</p>
                       <div className="rounded-3xl bg-white p-4 text-sm leading-7 text-slate-700 shadow-sm">{email.body}</div>
