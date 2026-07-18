@@ -1,0 +1,19 @@
+{
+  "name": "meeting-to-action",
+  "version": "0.1.0",
+  "description": "Prototype meeting transcript parser and action item extractor",
+  "main": "src/index.js",
+  "type": "module",
+  "scripts": {
+    "start": "node src/index.js sample-transcript.txt",
+    "test": "node test/run.js"
+  },
+  "keywords": [
+    "meeting",
+    "transcript",
+    "action-items",
+    "task-extraction"
+  ],
+  "author": "AI Assistant",
+  "license": "MIT"
+}
