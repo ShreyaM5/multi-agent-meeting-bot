@@ -9,7 +9,10 @@ from agents import parse_transcript, extract_commitments, format_tasks, draft_em
 APP = FastAPI(title='Meeting-to-Action API')
 APP.add_middleware(
     CORSMiddleware,
-    allow_origins=['http://localhost:3000'],
+    allow_origins=[
+        'http://localhost:3000',
+        'https://PLACEHOLDER-netlify-site.netlify.app',
+    ],
     allow_credentials=True,
     allow_methods=['*'],
     allow_headers=['*'],
