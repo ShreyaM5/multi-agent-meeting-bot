@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 
 type Task = {
   owner: string;
@@ -15,6 +15,17 @@ type Email = {
   body: string;
 };
 
+type HistoryEntry = {
+  id: number;
+  timestamp: string;
+  summary: string;
+};
+
+const defaultSampleTranscript = `Alice: Let's begin the status update. I will send the budget deck by Friday.
+Bob: That sounds good. I can follow up with legal about the contract language and report back by Monday.
+Charlie: We should also document the key risks and share a draft with the team next week.
+Alice: Perfect, let's make sure we have the final summary ready by end of day on Thursday.`;
+
 const priorityStyles: Record<string, string> = {
   low: 'bg-emerald-100 text-emerald-800',
   medium: 'bg-amber-100 text-amber-800',
@@ -22,13 +33,34 @@ const priorityStyles: Record<string, string> = {
 };
 
 export default function HomePage() {
-  const [transcript, setTranscript] = useState('');
+  const [transcript, setTranscript] = useState(defaultSampleTranscript);
   const [tasks, setTasks] = useState<Task[]>([]);
   const [emails, setEmails] = useState<Email[]>([]);
+  const [history, setHistory] = useState<HistoryEntry[]>([]);
   const [loading, setLoading] = useState(false);
+  const [historyLoading, setHistoryLoading] = useState(false);
   const [error, setError] = useState('');
 
   const apiUrl = process.env.NEXT_PUBLIC_API_URL || '';
+
+  async function fetchHistory() {
+    if (!apiUrl) {
+      return;
+    }
+    setHistoryLoading(true);
+    try {
+      const response = await fetch(`${apiUrl}/history`);
+      if (!response.ok) {
+        throw new Error('Unable to load history');
+      }
+      const data = await response.json();
+      setHistory(data || []);
+    } catch {
+      setHistory([]);
+    } finally {
+      setHistoryLoading(false);
+    }
+  }
 
   async function handleSubmit() {
     setError('');
@@ -52,6 +84,7 @@ export default function HomePage() {
       const data = await response.json();
       setTasks(data.tasks || []);
       setEmails(data.emails || []);
+      await fetchHistory();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Unknown error');
     } finally {
@@ -63,6 +96,10 @@ export default function HomePage() {
     const params = new URLSearchParams({ subject, body });
     return `mailto:?${params.toString()}`;
   };
+
+  useEffect(() => {
+    fetchHistory();
+  }, []);
 
   return (
     <main className="min-h-screen px-6 py-10">
@@ -92,9 +129,38 @@ export default function HomePage() {
           </section>
 
           <section className="rounded-3xl bg-white p-8 shadow-lg">
-            <h2 className="text-2xl font-semibold text-slate-900">History</h2>
-            <p className="mt-3 text-slate-600">Use the backend history endpoint to review past transcript runs.</p>
-            <p className="mt-4 rounded-2xl bg-slate-50 p-4 text-slate-700">History is available from the backend at <code className="break-all">{apiUrl}/history</code>.</p>
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <h2 className="text-2xl font-semibold text-slate-900">History</h2>
+                <p className="mt-3 text-slate-600">Review the most recent transcript runs saved by the backend.</p>
+              </div>
+              <button
+                type="button"
+                onClick={fetchHistory}
+                disabled={historyLoading || !apiUrl}
+                className="rounded-full bg-slate-900 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-700 disabled:cursor-not-allowed disabled:bg-slate-400"
+              >
+                {historyLoading ? 'Refreshing…' : 'Refresh'}
+              </button>
+            </div>
+            <div className="mt-6 space-y-4">
+              {apiUrl ? null : (
+                <p className="rounded-2xl bg-amber-50 p-4 text-amber-800">Set NEXT_PUBLIC_API_URL in frontend/.env.local to use history.</p>
+              )}
+              {history.length === 0 ? (
+                <p className="rounded-2xl bg-slate-50 p-4 text-slate-700">No history available yet. Process a transcript to create history.</p>
+              ) : (
+                <div className="space-y-3">
+                  {history.map((item) => (
+                    <div key={item.id} className="rounded-3xl border border-slate-200 bg-slate-50 p-4">
+                      <p className="text-sm font-semibold text-slate-900">Run {item.id}</p>
+                      <p className="mt-1 text-xs text-slate-500">{new Date(item.timestamp).toLocaleString()}</p>
+                      <p className="mt-2 text-sm text-slate-700">{item.summary}</p>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
           </section>
         </div>
 

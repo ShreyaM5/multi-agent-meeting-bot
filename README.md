@@ -35,6 +35,8 @@ npm run dev
 
 Then open: `http://localhost:3000`
 
+The frontend loads a sample transcript by default and includes a history panel for recent backend runs.
+
 ## Backend endpoints
 
 - `POST /process-transcript` — process a transcript and return parsed transcript, commitments, tasks, emails, and validation
