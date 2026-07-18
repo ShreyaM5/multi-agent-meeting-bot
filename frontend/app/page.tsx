@@ -104,16 +104,29 @@ export default function HomePage() {
   return (
     <main className="min-h-screen bg-slate-50 px-6 py-10">
       <div className="mx-auto max-w-6xl">
-        <div className="mb-10 overflow-hidden rounded-[2rem] bg-gradient-to-r from-teal-600 via-sky-600 to-cyan-500 p-1 shadow-2xl">
-          <div className="rounded-[1.75rem] bg-white px-8 py-10 sm:px-14">
-            <span className="inline-flex rounded-full bg-teal-100 px-3 py-1 text-sm font-semibold text-teal-800">FlowZint AI Hackathon 2026</span>
-            <h1 className="mt-6 text-5xl font-semibold tracking-tight text-slate-900">Meeting-to-Action</h1>
-            <p className="mt-4 max-w-3xl text-lg leading-8 text-slate-600">Paste a meeting transcript and automatically extract commitments, tasks, and follow-up emails.</p>
-            <div className="mt-6 flex flex-wrap items-center gap-3 text-sm text-slate-600">
+        <header className="mb-6 rounded-full border border-slate-200 bg-white px-6 py-4 shadow-sm">
+          <div className="flex items-center justify-between gap-4">
+            <div className="flex items-center gap-3">
+              <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-teal-600 text-lg font-bold text-white shadow-sm">
+                M2A
+              </div>
+              <div>
+                <p className="text-base font-semibold text-slate-900">Meeting-to-Action</p>
+                <p className="text-sm text-slate-500">Extract commitments, tasks, and follow-up emails from meeting transcripts.</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-4 text-sm text-slate-600">
               <a href="https://multi-agent-meeting-bot.netlify.app" className="font-semibold text-teal-700 hover:text-teal-900">Live app</a>
-              <span>•</span>
+              <span className="h-4 w-px bg-slate-200" />
               <a href="https://multi-agent-meeting-bot.onrender.com/docs" className="font-semibold text-teal-700 hover:text-teal-900">Backend API docs</a>
             </div>
+          </div>
+        </header>
+
+        <div className="mb-10 overflow-hidden rounded-[2rem] bg-gradient-to-r from-teal-600 via-sky-600 to-cyan-500 p-1 shadow-2xl">
+          <div className="rounded-[1.75rem] bg-white px-8 py-10 sm:px-14">
+            <h1 className="text-5xl font-semibold tracking-tight text-slate-900">Meeting-to-Action</h1>
+            <p className="mt-4 max-w-3xl text-lg leading-8 text-slate-600">Paste a meeting transcript and automatically extract commitments, tasks, and follow-up emails.</p>
           </div>
         </div>
 
@@ -253,6 +266,9 @@ export default function HomePage() {
             )}
           </div>
         )}
+        <footer className="mt-10 rounded-[1.75rem] border border-slate-200 bg-slate-100 p-6 text-center text-sm text-slate-600 shadow-sm">
+          © {new Date().getFullYear()} Meeting-to-Action. All rights reserved. Made by Shreya Maurya.
+        </footer>
       </div>
     </main>
   );
