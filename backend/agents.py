@@ -14,7 +14,8 @@ client = Groq(api_key=GROQ_API_KEY) if GROQ_API_KEY else None
 
 COMMITMENT_PROMPT = '''
 You are an assistant that extracts only real commitments from a meeting transcript.
-Return valid JSON only. Output an array of objects with exactly these keys:
+Return only valid JSON with no markdown, no code fences, and no extra explanation.
+Output an array of objects with exactly these keys:
 - owner (string)
 - task (string)
 - deadline (string|null)
@@ -27,7 +28,8 @@ Only include clear action items or commitments. Do not include general discussio
 
 EMAIL_PROMPT = '''
 You are a friendly assistant that drafts follow-up emails for assigned action items.
-Return valid JSON only. Output an object with keys:
+Return only valid JSON with no markdown, no code fences, and no extra explanation.
+Output an object with keys:
 - to (string)
 - subject (string)
 - body (string)
@@ -38,7 +40,7 @@ Generate a short, polite email using the owner's name and the following tasks:
 
 VALIDATOR_PROMPT = '''
 You are a transcript validation assistant.
-Given the original transcript and a JSON array of extracted commitments, return valid JSON only.
+Given the original transcript and a JSON array of extracted commitments, return only valid JSON with no markdown, no code fences, and no extra explanation.
 Output an object with keys:
 - valid (boolean)
 - note (string)
@@ -48,9 +50,53 @@ If something seems missing or hallucinated, return valid false and briefly expla
 '''
 
 
-def query_groq(prompt: str, max_retries: int = 1) -> Dict[str, Any]:
+def _strip_code_fences(text: str) -> str:
+    text = text.strip()
+    if text.startswith('```') and text.endswith('```'):
+        lines = text.splitlines()
+        if len(lines) >= 2:
+            if lines[0].startswith('```'):
+                lines = lines[1:]
+            if lines and lines[-1].startswith('```'):
+                lines = lines[:-1]
+            text = '\n'.join(lines).strip()
+    return text
+
+
+def _extract_json_text(text: str) -> str:
+    text = _strip_code_fences(text).strip()
+
+    # Find the first JSON object or array and parse only that portion.
+    first_brace = text.find('{')
+    first_bracket = text.find('[')
+    if first_brace == -1 and first_bracket == -1:
+        return text
+
+    if first_brace == -1:
+        start = first_bracket
+    elif first_bracket == -1:
+        start = first_brace
+    else:
+        start = min(first_brace, first_bracket)
+
+    last_brace = text.rfind('}')
+    last_bracket = text.rfind(']')
+    if last_brace == -1 and last_bracket == -1:
+        return text
+
+    end = max(last_brace, last_bracket)
+    if end <= start:
+        return text
+
+    return text[start:end + 1].strip()
+
+
+def query_groq(prompt: str, response_format: Optional[Dict[str, Any]] = None, max_retries: int = 1) -> Any:
     if client is None:
         raise RuntimeError('GROQ_API_KEY is not configured. Set GROQ_API_KEY in backend/.env or environment.')
+
+    if response_format is None:
+        response_format = {'type': 'json_object'}
 
     for attempt in range(max_retries + 1):
         response = client.chat.completions.create(
@@ -58,7 +104,7 @@ def query_groq(prompt: str, max_retries: int = 1) -> Dict[str, Any]:
             messages=[{'role': 'user', 'content': prompt}],
             temperature=0.2,
             top_p=0.95,
-            response_format={'type': 'json_object'},
+            response_format=response_format,
             max_completion_tokens=512,
         )
 
@@ -67,14 +113,25 @@ def query_groq(prompt: str, max_retries: int = 1) -> Dict[str, Any]:
 
         message = response.choices[0].message
         content = getattr(message, 'content', None)
-        if not content or not isinstance(content, str):
-            continue
 
-        try:
-            return json.loads(content.strip())
-        except json.JSONDecodeError:
-            if attempt == max_retries:
-                raise ValueError('Groq response was not valid JSON: ' + repr(content))
+        raw_content = content
+        if isinstance(content, str):
+            print(f'[GROQ DEBUG] raw response: {repr(content)}')
+            cleaned = _extract_json_text(content)
+            if cleaned != content:
+                print(f'[GROQ DEBUG] cleaned response: {repr(cleaned)}')
+            try:
+                return json.loads(cleaned)
+            except json.JSONDecodeError:
+                if attempt == max_retries:
+                    raise ValueError('Groq response was not valid JSON: ' + repr(raw_content))
+                continue
+
+        if isinstance(content, (dict, list)):
+            return content
+
+        if attempt == max_retries:
+            raise ValueError('Groq response was not valid JSON: ' + repr(raw_content))
     raise RuntimeError('Groq query failed after retries')
 
 
@@ -95,9 +152,25 @@ def parse_transcript(raw_text: str) -> List[Dict[str, str]]:
 def extract_commitments(parsed_transcript: List[Dict[str, str]]) -> List[Dict[str, Optional[str]]]:
     formatted = json.dumps(parsed_transcript, ensure_ascii=False)
     prompt = COMMITMENT_PROMPT.format(parsed=formatted)
-    commitments = query_groq(prompt)
+    response_format = {
+        'type': 'json_schema',
+        'json_schema': {
+            'type': 'array',
+            'items': {
+                'type': 'object',
+                'properties': {
+                    'owner': {'type': 'string'},
+                    'task': {'type': 'string'},
+                    'deadline': {'anyOf': [{'type': 'string'}, {'type': 'null'}]},
+                },
+                'required': ['owner', 'task'],
+                'additionalProperties': True,
+            },
+        },
+    }
+    commitments = query_groq(prompt, response_format=response_format)
     if not isinstance(commitments, list):
-        raise ValueError('Commitments response was not a JSON array')
+        raise ValueError('Commitments response was not a JSON array: ' + repr(commitments))
     normalized = []
     for item in commitments:
         if not isinstance(item, dict):
