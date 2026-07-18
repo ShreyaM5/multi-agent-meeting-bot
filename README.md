@@ -1,38 +1,53 @@
-# Meeting-to-Action Prototype
+# Meeting-to-Action
 
-A simple JavaScript/Node prototype that turns a meeting transcript into:
-- parsed utterances by speaker
-- extracted commitments with owners, deadlines, and priority
-- formatted tasks in a structured JSON schema
-- follow-up email drafts per owner
+A full-stack prototype that turns meeting transcripts into structured tasks and follow-up emails using a multi-agent-inspired pipeline.
 
-## Usage
+## Project structure
 
-Run the prototype against a transcript file:
+- `/backend` — FastAPI backend, Groq LLM integration, SQLite storage
+- `/frontend` — Next.js + Tailwind frontend for transcript input and results display
 
-```bash
-npm start
+## Environment variables
+
+Backend:
+- `backend/.env` should contain:
+  - `GROQ_API_KEY=your_groq_api_key_here`
+
+Frontend:
+- `frontend/.env.local` contains:
+  - `NEXT_PUBLIC_API_URL=http://localhost:8000`
+
+## Run locally
+
+1. Backend
+
+```powershell
+cd backend
+& 'C:\Users\user\AppData\Local\Microsoft\WindowsApps\python.exe' -m uvicorn backend.main:APP --reload --host 127.0.0.1 --port 8000
 ```
 
-Or with a custom transcript:
+2. Frontend
 
-```bash
-node src/index.js path/to/transcript.txt
+```powershell
+cd frontend
+npm run dev
 ```
 
-## Testing
+Then open: `http://localhost:3000`
 
-```bash
-npm test
-```
+## Backend endpoints
 
-## Project Links
-
-- Repository: https://github.com/ShreyaM5/multi-agent-meeting-bot
+- `POST /process-transcript` — process a transcript and return parsed transcript, commitments, tasks, emails, and validation
+- `GET /history` — list past processed transcripts stored in SQLite
 
 ## How it works
 
-- `src/parser.js`: cleans transcript text, removes filler and cross-talk, splits by speaker.
-- `src/extractor.js`: scans for commitment sentences and derives owners, due dates, and priority.
-- `src/formatter.js`: maps commitments into task objects.
-- `src/email.js`: drafts follow-up emails grouped by task owner.
+- `backend/agents.py`: pipeline functions and Groq prompt integration
+- `backend/db.py`: SQLite initialization and history storage
+- `backend/main.py`: FastAPI app, CORS, request validation
+- `frontend/app/page.tsx`: transcript input, loading state, tasks table, email cards with `mailto:` links
+
+## Notes
+
+- This app uses `mailto:` links for follow-up emails only and does not send real emails.
+- The backend stores processed transcript runs in `backend/meetings.db`.
