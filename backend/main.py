@@ -11,7 +11,7 @@ APP.add_middleware(
     CORSMiddleware,
     allow_origins=[
         'http://localhost:3000',
-        'https://PLACEHOLDER-netlify-site.netlify.app',
+        'https://multi-agent-meeting-bot.netlify.app',
     ],
     allow_credentials=True,
     allow_methods=['*'],
