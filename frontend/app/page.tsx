@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useRef, useState } from 'react';
 
 type Task = {
   owner: string;
@@ -13,12 +13,6 @@ type Email = {
   to: string;
   subject: string;
   body: string;
-};
-
-type HistoryEntry = {
-  id: number;
-  timestamp: string;
-  summary: string;
 };
 
 const defaultSampleTranscript = `Alice: Let's begin the status update. I will send the budget deck by Friday.
@@ -36,32 +30,11 @@ export default function HomePage() {
   const [transcript, setTranscript] = useState(defaultSampleTranscript);
   const [tasks, setTasks] = useState<Task[]>([]);
   const [emails, setEmails] = useState<Email[]>([]);
-  const [history, setHistory] = useState<HistoryEntry[]>([]);
   const [loading, setLoading] = useState(false);
-  const [historyLoading, setHistoryLoading] = useState(false);
   const [error, setError] = useState('');
   const requestIdRef = useRef(0);
 
   const apiUrl = process.env.NEXT_PUBLIC_API_URL || '';
-
-  async function fetchHistory() {
-    if (!apiUrl) {
-      return;
-    }
-    setHistoryLoading(true);
-    try {
-      const response = await fetch(`${apiUrl}/history`);
-      if (!response.ok) {
-        throw new Error('Unable to load history');
-      }
-      const data = await response.json();
-      setHistory(data || []);
-    } catch {
-      setHistory([]);
-    } finally {
-      setHistoryLoading(false);
-    }
-  }
 
   async function handleSubmit() {
     setError('');
@@ -92,7 +65,6 @@ export default function HomePage() {
       }
       setTasks(data.tasks || []);
       setEmails(data.emails || []);
-      await fetchHistory();
     } catch (err) {
       if (currentRequestId === requestIdRef.current) {
         setError(err instanceof Error ? err.message : 'Unknown error');
@@ -108,10 +80,6 @@ export default function HomePage() {
     const params = new URLSearchParams({ subject, body });
     return `mailto:?${params.toString()}`;
   };
-
-  useEffect(() => {
-    fetchHistory();
-  }, []);
 
   return (
     <main className="min-h-screen bg-slate-50 px-6 py-10">
@@ -142,74 +110,37 @@ export default function HomePage() {
           </div>
         </div>
 
-        <div className="grid gap-8 lg:grid-cols-[1.45fr_0.7fr]">
-          <section className="rounded-[2rem] border border-slate-200 bg-white p-8 shadow-xl">
-            <h2 className="text-2xl font-semibold text-slate-900">Transcript input</h2>
-            <p className="mt-2 text-sm text-slate-600">Paste the meeting transcript below, then process it to generate action items and follow-up emails.</p>
-            <textarea
-              value={transcript}
-              onChange={(event) => {
-                setTranscript(event.target.value);
-                setTasks([]);
-                setEmails([]);
-                setError('');
-              }}
-              placeholder="Paste the meeting transcript here..."
-              className="mt-4 h-72 w-full rounded-[1.5rem] border border-slate-200 bg-slate-50 p-5 text-slate-900 outline-none transition focus:border-teal-400 focus:ring-2 focus:ring-teal-100"
-            />
-            <button
-              onClick={handleSubmit}
-              disabled={loading}
-              className="mt-5 inline-flex items-center justify-center rounded-full bg-teal-600 px-7 py-3 text-sm font-semibold text-white transition hover:bg-teal-700 disabled:cursor-not-allowed disabled:bg-teal-300"
-            >
-              {loading ? (
-                <>
-                  <span className="mr-2 inline-block h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
-                  Processing…
-                </>
-              ) : (
-                'Process Transcript'
-              )}
-            </button>
-            {error ? <p className="mt-4 text-sm text-rose-600">{error}</p> : null}
-            {loading ? <p className="mt-4 rounded-3xl bg-teal-50 p-4 text-sm text-teal-800">Processing transcript, please wait...</p> : null}
-          </section>
-
-          <section className="rounded-[2rem] border border-slate-200 bg-white p-8 shadow-xl">
-            <div className="flex items-start justify-between gap-4">
-              <div>
-                <h2 className="text-2xl font-semibold text-slate-900">History</h2>
-                <p className="mt-3 text-slate-600">Review the most recent transcript runs saved by the backend.</p>
-              </div>
-              <button
-                type="button"
-                onClick={fetchHistory}
-                disabled={historyLoading || !apiUrl}
-                className="rounded-full bg-teal-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-teal-700 disabled:cursor-not-allowed disabled:bg-teal-300"
-              >
-                {historyLoading ? 'Refreshing…' : 'Refresh'}
-              </button>
-            </div>
-            <div className="mt-6 space-y-4">
-              {apiUrl ? null : (
-                <p className="rounded-3xl bg-amber-50 p-4 text-amber-800">Set NEXT_PUBLIC_API_URL in frontend/.env.local to use history.</p>
-              )}
-              {history.length === 0 ? (
-                <p className="rounded-3xl bg-slate-50 p-4 text-slate-700">No history available yet. Process a transcript to create history.</p>
-              ) : (
-                <div className="space-y-3">
-                  {history.map((item) => (
-                    <div key={item.id} className="rounded-3xl border border-slate-200 bg-slate-50 p-4">
-                      <p className="text-sm font-semibold text-slate-900">Run {item.id}</p>
-                      <p className="mt-1 text-xs text-slate-500">{new Date(item.timestamp).toLocaleString()}</p>
-                      <p className="mt-2 text-sm text-slate-700">{item.summary}</p>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          </section>
-        </div>
+        <section className="rounded-[2rem] border border-slate-200 bg-white p-8 shadow-xl">
+          <h2 className="text-2xl font-semibold text-slate-900">Transcript input</h2>
+          <p className="mt-2 text-sm text-slate-600">Paste the meeting transcript below, then process it to generate action items and follow-up emails.</p>
+          <textarea
+            value={transcript}
+            onChange={(event) => {
+              setTranscript(event.target.value);
+              setTasks([]);
+              setEmails([]);
+              setError('');
+            }}
+            placeholder="Paste the meeting transcript here..."
+            className="mt-4 h-72 w-full rounded-[1.5rem] border border-slate-200 bg-slate-50 p-5 text-slate-900 outline-none transition focus:border-teal-400 focus:ring-2 focus:ring-teal-100"
+          />
+          <button
+            onClick={handleSubmit}
+            disabled={loading}
+            className="mt-5 inline-flex items-center justify-center rounded-full bg-teal-600 px-7 py-3 text-sm font-semibold text-white transition hover:bg-teal-700 disabled:cursor-not-allowed disabled:bg-teal-300"
+          >
+            {loading ? (
+              <>
+                <span className="mr-2 inline-block h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                Processing…
+              </>
+            ) : (
+              'Process Transcript'
+            )}
+          </button>
+          {error ? <p className="mt-4 text-sm text-rose-600">{error}</p> : null}
+          {loading ? <p className="mt-4 rounded-3xl bg-teal-50 p-4 text-sm text-teal-800">Processing transcript, please wait...</p> : null}
+        </section>
 
         {(tasks.length > 0 || emails.length > 0) && (
           <div className="mt-10 rounded-[2rem] border border-slate-200 bg-white p-8 shadow-xl">
