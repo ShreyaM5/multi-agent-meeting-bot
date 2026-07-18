@@ -29,7 +29,6 @@ npm test
 ## Project Links
 
 - Repository: https://github.com/ShreyaM5/multi-agent-meeting-bot
-- Live demo: https://shreyam5.github.io/multi-agent-meeting-bot/
 
 ## How it works
 
