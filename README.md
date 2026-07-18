@@ -6,7 +6,6 @@ A multi-agent AI pipeline that turns raw meeting transcripts into structured tas
 
 - **Name**: Meeting-to-Action
 - **Tagline**: A multi-agent AI pipeline that turns raw meeting transcripts into structured tasks and ready-to-send follow-up emails.
-- **Built for**: FlowZint AI Hackathon 2026 (Open Innovation track)
 
 ## Live links
 
