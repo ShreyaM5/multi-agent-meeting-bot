@@ -15,7 +15,7 @@ client = Groq(api_key=GROQ_API_KEY) if GROQ_API_KEY else None
 COMMITMENT_PROMPT = '''
 You are an assistant that extracts only real commitments from a meeting transcript.
 Return only valid JSON with no markdown, no code fences, and no extra explanation.
-Output an array of objects with exactly these keys:
+Output an object with a single key "commitments" whose value is an array of objects with exactly these keys:
 - owner (string)
 - task (string)
 - deadline (string|null)
@@ -152,25 +152,10 @@ def parse_transcript(raw_text: str) -> List[Dict[str, str]]:
 def extract_commitments(parsed_transcript: List[Dict[str, str]]) -> List[Dict[str, Optional[str]]]:
     formatted = json.dumps(parsed_transcript, ensure_ascii=False)
     prompt = COMMITMENT_PROMPT.format(parsed=formatted)
-    response_format = {
-        'type': 'json_schema',
-        'json_schema': {
-            'type': 'array',
-            'items': {
-                'type': 'object',
-                'properties': {
-                    'owner': {'type': 'string'},
-                    'task': {'type': 'string'},
-                    'deadline': {'anyOf': [{'type': 'string'}, {'type': 'null'}]},
-                },
-                'required': ['owner', 'task'],
-                'additionalProperties': True,
-            },
-        },
-    }
-    commitments = query_groq(prompt, response_format=response_format)
-    if not isinstance(commitments, list):
-        raise ValueError('Commitments response was not a JSON array: ' + repr(commitments))
+    result = query_groq(prompt)
+    if not isinstance(result, dict) or 'commitments' not in result or not isinstance(result['commitments'], list):
+        raise ValueError('Commitments response was not a JSON object containing a commitments array: ' + repr(result))
+    commitments = result['commitments']
     normalized = []
     for item in commitments:
         if not isinstance(item, dict):
