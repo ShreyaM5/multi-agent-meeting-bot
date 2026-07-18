@@ -3,8 +3,8 @@ import json
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
-from backend.db import init_db, save_meeting, list_history
-from backend.agents import parse_transcript, extract_commitments, format_tasks, draft_emails, validate_commitments
+from db import init_db, save_meeting, list_history
+from agents import parse_transcript, extract_commitments, format_tasks, draft_emails, validate_commitments
 
 APP = FastAPI(title='Meeting-to-Action API')
 APP.add_middleware(
