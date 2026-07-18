@@ -4,6 +4,7 @@ frontend/.next/
 frontend/out/
 backend/__pycache__/
 backend/*.sqlite3
+backend/*.db
 backend/.env
 frontend/.env.local
 .env
